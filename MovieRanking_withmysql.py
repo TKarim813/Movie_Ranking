@@ -256,24 +256,31 @@ def display_rankings():
     print(ranked_list)
 
 
-# def display_user_rankings(username):
-#     """function shows the user's individual ranking for the movies"""
-#     cnx = mysql.connector.connect(user='root', password='Tnci12!UHbs94',
-#                               database = 'moviematchupdb',  host='localhost')
-#     cursor = cnx.cursor()
-#     query = ("""SELECT * FROM movies
-#              ORDER BY elo DESC""")
-#     cursor.execute(query)
-#     ranked_list = ""
-#     i = 1
-#     for (movie,elo,id_) in cursor:
-#         ranked_list += f"{i}. {movie} \n"
-#         i += 1
-#     cursor.close()
-#     cnx.close()
-#     print('\n')
-#     print(f'Rankings for {username}')
-#     print(ranked_list)
+def display_user_rankings(user_id,username):
+    """function shows the user's individual ranking for the movies"""
+    cnx = mysql.connector.connect(user='root', password='Tnci12!UHbs94',
+                              database = 'moviematchupdb',  host='localhost')
+    cursor = cnx.cursor()
+    query = ("""select 
+                	movie
+                from user_rankings 
+                join users
+                	on users.id = user_rankings.user_id
+                join movies
+                	on movies.id = user_rankings.movie_id
+                where user_id = %s
+                order by movie_rank;""")
+    cursor.execute(query, (user_id, ))
+    ranked_list = ""
+    i = 1
+    for (movie, ) in cursor:
+        ranked_list += f"{i}. {movie} \n"
+        i += 1
+    cursor.close()
+    cnx.close()
+    print('\n')
+    print(f'Rankings for {username}')
+    print(ranked_list)
 
 
 def random_matchup():
@@ -327,11 +334,15 @@ if __name__ == '__main__':
         while True:
             repeat = (input("Do you want to rank more movies? "
                             "Press 'Y' for yes and 'N' for no, "
-                            "or press 'R' to see the full rankings. ")).upper()
+                            "press 'R' to see the full rankings "
+                            "or press 'U' to see your user rankings. ")).upper()
             if repeat in ("Y","N"):
                 break
             elif repeat == "R":
                 display_rankings()
+                continue
+            elif repeat == "U":
+                display_user_rankings(user_id,username)
                 continue
             else:
                 print("Please enter 'Y', 'N' or 'R'.")
