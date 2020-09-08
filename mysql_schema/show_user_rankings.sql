@@ -9,6 +9,6 @@ join users
 	on users.id = user_rankings.user_id
 join movies
 	on movies.id = user_rankings.movie_id
-where user_id = 6
+where user = "hapob"
 order by movie_rank;
 

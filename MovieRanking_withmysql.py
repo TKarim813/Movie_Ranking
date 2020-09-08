@@ -261,15 +261,15 @@ def display_user_rankings(user_id,username):
     cnx = mysql.connector.connect(user='root', password='Tnci12!UHbs94',
                               database = 'moviematchupdb',  host='localhost')
     cursor = cnx.cursor()
-    query = ("""select 
+    query = ("""SELECT 
                 	movie
-                from user_rankings 
-                join users
-                	on users.id = user_rankings.user_id
-                join movies
-                	on movies.id = user_rankings.movie_id
-                where user_id = %s
-                order by movie_rank;""")
+                FROM user_rankings 
+                JOIN users
+                	ON users.id = user_rankings.user_id
+                JOIN movies
+                	ON movies.id = user_rankings.movie_id
+                WHERE user_id = %s
+                ORDER BY movie_rank;""")
     cursor.execute(query, (user_id, ))
     ranked_list = ""
     i = 1
