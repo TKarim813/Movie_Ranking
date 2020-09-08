@@ -84,6 +84,19 @@ def find_movienames(matchup):
     cnx.close()
     return movie_names
 
+
+def add_to_user_rankings(user_id):
+    """This function adds a new user to the user rankings table"""
+    cnx = mysql.connector.connect(user='root', password='Tnci12!UHbs94',
+                              database = 'moviematchupdb',  host='localhost')
+    cursor = cnx.cursor()
+    user_rankings = ("""INSERT INTO user_rankings (movie_id, user_id, movie_rank)
+                      select id, %s, id from movies""")
+    cursor.execute(user_rankings,(user_id, ))
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+
     
 # def update_user_ranking(movie_name, score):
 #     """This function updates the individual user rankings of the two movies 
@@ -171,12 +184,12 @@ def display_rankings():
     cnx = mysql.connector.connect(user='root', password='Tnci12!UHbs94',
                               database = 'moviematchupdb',  host='localhost')
     cursor = cnx.cursor()
-    query = ("""SELECT * FROM movies
+    query = ("""SELECT movie, elo FROM movies
              ORDER BY elo DESC""")
     cursor.execute(query)
     ranked_list = ""
     i = 1
-    for (movie,elo,id_) in cursor:
+    for (movie,elo) in cursor:
         ranked_list += f"{i}. {movie} with an elo of {elo} \n"
         i += 1
     cursor.close()
@@ -210,12 +223,12 @@ def random_matchup():
     cnx = mysql.connector.connect(user='root', password='Tnci12!UHbs94',
                               database = 'moviematchupdb',  host='localhost')
     cursor = cnx.cursor()
-    query = ("""SELECT * FROM movies
+    query = ("""SELECT elo, id FROM movies
              ORDER BY RAND()
              LIMIT 2""")
     cursor.execute(query)
     matchup = {}
-    for (movie, elo, id_) in cursor:
+    for (elo, id_) in cursor:
         matchup[id_] = elo 
     cursor.close()
     cnx.close()
@@ -235,6 +248,7 @@ if __name__ == '__main__':
             logged_in = create_user(username)
             if logged_in == 'logged in':
                 user_id = find_userID(username)
+                add_to_user_rankings(user_id)
                 break  
         else: #logging into existing user
             username = login
