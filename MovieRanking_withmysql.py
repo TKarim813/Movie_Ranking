@@ -96,21 +96,77 @@ def add_to_user_rankings(user_id):
     cnx.commit()
     cursor.close()
     cnx.close()
-
     
-# def update_user_ranking(movie_name, score):
-#     """This function updates the individual user rankings of the two movies 
-#     from the matchup"""
-    # cnx = mysql.connector.connect(user='root', password='Tnci12!UHbs94',
-    #                           database = 'moviematchupdb',  host='localhost')
-    # cursor = cnx.cursor()
-    # query = ("""UPDATE movies
-    #           SET elo = %s
-    #           WHERE movie = %s;""")
-    # cursor.execute(query,(movie_elo,movie_name))
-    # cnx.commit()
-    # cursor.close()
-    # cnx.close()
+    
+def get_user_rankings(user_id, matchup):
+    """function gets user rankings for movies in the matchup from sql 
+    database"""
+    cnx = mysql.connector.connect(user='root', password='Tnci12!UHbs94',
+                              database = 'moviematchupdb',  host='localhost')
+    cursor = cnx.cursor()
+    query = ("""SELECT movie_id, movie_rank FROM user_rankings
+             where user_id = %s and (movie_id = %s or movie_id = %s);""")
+    
+    cursor.execute(query,(user_id ,list(matchup.keys())[0],list(matchup.keys())[1]))
+    
+    movie_ranks = {}
+    for (movie_id, movie_rank) in cursor:
+        movie_ranks[movie_id] = movie_rank 
+    
+    cursor.close()
+    cnx.close()
+    
+    return movie_ranks
+
+
+def update_user_ranking(winner_id,loser_id,movie_ranks,user_id):    
+    """function updates user rankings using the current rankings and matchup
+    results: if rank of winner is higher than loser set rank of winner to 
+    loser_rank, with the loser rank being increased by 1.
+    New rankings are then updated in sql database"""
+    if movie_ranks[winner_id] > movie_ranks[loser_id]:
+        #rank of winning movie is higher than loser movie 
+        movie_ranks[winner_id] = movie_ranks[loser_id]
+        movie_ranks[loser_id] = movie_ranks[loser_id]+1
+        #update sql database with new rankings
+        cnx = mysql.connector.connect(user='root', password='Tnci12!UHbs94',
+                          database = 'moviematchupdb',  host='localhost')
+        winner = cnx.cursor()
+        loser = cnx.cursor()
+        winner_movie = ("""UPDATE user_rankings
+                        SET movie_rank = %s
+                        WHERE user_id = %s and movie_id = %s;""")
+        loser_movie = ("""UPDATE user_rankings
+                        SET movie_rank = %s
+                        WHERE user_id = %s and movie_id = %s;""")
+        winner.execute(winner_movie,(movie_ranks[winner_id],user_id,winner_id))
+        loser.execute(loser_movie,(movie_ranks[loser_id],user_id,loser_id))
+        cnx.commit()
+        winner.close()
+        loser.close()
+        cnx.close()
+    elif movie_ranks[winner_id] == movie_ranks[loser_id]:
+        movie_ranks[loser_id] = movie_ranks[loser_id]+1
+        #update sql database with new rankings
+        cnx = mysql.connector.connect(user='root', password='Tnci12!UHbs94',
+                          database = 'moviematchupdb',  host='localhost')
+        winner = cnx.cursor()
+        loser = cnx.cursor()
+        winner_movie = ("""UPDATE user_rankings
+                        SET movie_rank = %s
+                        WHERE user_id = %s and movie_id = %s;""")
+        loser_movie = ("""UPDATE user_rankings
+                        SET movie_rank = %s
+                        WHERE user_id = %s and movie_id = %s;""")
+        winner.execute(winner_movie,(movie_ranks[winner_id],user_id,winner_id))
+        loser.execute(loser_movie,(movie_ranks[loser_id],user_id,loser_id))
+        cnx.commit()
+        winner.close()
+        loser.close()
+        cnx.close()
+    else:
+        #rank of winning movie is lower than loser movie
+        pass #nothing happens in this case
 
 
 def record_matchup(user_id, results):
@@ -147,13 +203,15 @@ def which_movie(matchup):
             choice = int(input(f"Press '1' for {movie_names[0]} or '2' for {movie_names[1]}: "))
             if choice == 1:
                 print(f"You have chosen {movie_names[0]}.")
-                scores[list(matchup.keys())[0]] = 1
-                scores[list(matchup.keys())[1]] = 0
+                scores[list(matchup.keys())[0]] = 1 #winner
+                scores[list(matchup.keys())[1]] = 0 #loser
+                update_user_ranking(list(matchup.keys())[0],list(matchup.keys())[1],movie_ranks,user_id)
                 break
             elif choice == 2:
                 print(f"You have chosen {movie_names[1]}.")
-                scores[list(matchup.keys())[0]] = 0
-                scores[list(matchup.keys())[1]] = 1
+                scores[list(matchup.keys())[0]] = 0 #loser
+                scores[list(matchup.keys())[1]] = 1 #winner
+                update_user_ranking(list(matchup.keys())[1],list(matchup.keys())[0],movie_ranks,user_id)
                 break
             else:
                 print("Please select 1 or 2.")
@@ -258,6 +316,7 @@ if __name__ == '__main__':
                 break            
     while True: #ranking and view full rankings procedures
         matchup = random_matchup() #Picks two random movies for matchup
+        movie_ranks = get_user_rankings(user_id, matchup)
         exp_scores = expected_scores(list(matchup.values())[0],list(matchup.values())[1])
         results = which_movie(matchup) #user chooses movie and scores (1 or 0) are returned
         record_matchup(user_id, results) #records the results of the matchup to database
