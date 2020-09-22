@@ -348,7 +348,7 @@ if __name__ == '__main__':
     while True: #ranking and view full rankings procedures
         while True:
             matchup = random_matchup() #Picks two random movies for matchup
-            repeats = repeated_matchup_check
+            repeats = repeated_matchup_check(user_id, matchup)
             if repeats == 0:
                 break
         movie_ranks = get_user_rankings(user_id, matchup)

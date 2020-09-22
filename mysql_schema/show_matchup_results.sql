@@ -13,7 +13,7 @@ join movies as movies_w
 	on movies_w.id = matchup_results.winner
 join movies as movies_l
 	on movies_l.id = matchup_results.loser
-where user = "hapob"
+where user = "thaha"
 order by date_time;
     
     
