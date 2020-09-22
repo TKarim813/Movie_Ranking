@@ -220,6 +220,30 @@ def which_movie(matchup):
             print("Please select 1 or 2.")
     return scores
 
+def repeated_matchup_check(user, matchup):
+    """Function checks if current user has already had the matchup before"""
+    cnx = mysql.connector.connect(user='root', password='Tnci12!UHbs94',
+                              database = 'moviematchupdb',  host='localhost')
+    cursor = cnx.cursor()
+    query = ("""SELECT Count(*) AS if_repeat
+                FROM   (SELECT *
+                        FROM   matchup_results
+                        WHERE  user_id = %(user_id)s) AS users
+                WHERE  ( winner = %(movie_1)s
+                        AND loser = %(movie_2)s )
+                        OR ( winner = %(movie_2)s
+                            AND loser = %(movie_1)s );""")
+    movies = {
+        'user_id' : user,
+        'movie_1' : list(matchup.keys())[0],
+        'movie_2' : list(matchup.keys())[1]
+    }
+    cursor.execute(query,movies)
+    for (if_repeat, ) in cursor:
+        repeats = if_repeat  
+    cursor.close()
+    cnx.close()
+    return repeats
 
 def update_elo(movie,movie_elo,exp_score,score,kfactor):
     """This function updates elo score of object based on score from
@@ -322,7 +346,11 @@ if __name__ == '__main__':
                 user_id = find_userID(username)
                 break            
     while True: #ranking and view full rankings procedures
-        matchup = random_matchup() #Picks two random movies for matchup
+        while True:
+            matchup = random_matchup() #Picks two random movies for matchup
+            repeats = repeated_matchup_check
+            if repeats == 0:
+                break
         movie_ranks = get_user_rankings(user_id, matchup)
         exp_scores = expected_scores(list(matchup.values())[0],list(matchup.values())[1])
         results = which_movie(matchup) #user chooses movie and scores (1 or 0) are returned
