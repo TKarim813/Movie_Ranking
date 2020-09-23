@@ -346,19 +346,27 @@ if __name__ == '__main__':
                 user_id = find_userID(username)
                 break            
     while True: #ranking and view full rankings procedures
-        while True:
+        attempted_matchup = 0
+        while True: #This while loop contains code to pick matchup and checks if it is repeated
+            attempted_matchup += 1
             matchup = random_matchup() #Picks two random movies for matchup
             repeats = repeated_matchup_check(user_id, matchup)
             if repeats == 0:
                 break
-        movie_ranks = get_user_rankings(user_id, matchup)
-        exp_scores = expected_scores(list(matchup.values())[0],list(matchup.values())[1])
-        results = which_movie(matchup) #user chooses movie and scores (1 or 0) are returned
-        record_matchup(user_id, results) #records the results of the matchup to database
-        i = 0
-        for movie in results: #updates the elo of the two movies 
-            update_elo(movie,matchup[movie],exp_scores[i],results[movie],32) 
-            i += 1
+            if attempted_matchup >= 45:
+                matchup = None
+                break
+        if matchup != None: #matchup was not repeated     
+            movie_ranks = get_user_rankings(user_id, matchup)
+            exp_scores = expected_scores(list(matchup.values())[0],list(matchup.values())[1])
+            results = which_movie(matchup) #user chooses movie and scores (1 or 0) are returned
+            record_matchup(user_id, results) #records the results of the matchup to database
+            i = 0
+            for movie in results: #updates the elo of the two movies 
+                update_elo(movie,matchup[movie],exp_scores[i],results[movie],32) 
+                i += 1
+        else: #matchup was repeated - all movies are ranked
+            print("You have ranked all the movies!")
         while True:
             repeat = (input("Do you want to rank more movies? "
                             "Press 'Y' for yes and 'N' for no, "
