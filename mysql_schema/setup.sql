@@ -1,3 +1,5 @@
+drop database moviematchupdb;
+
 create database moviematchupdb;
 use moviematchupdb;
 
